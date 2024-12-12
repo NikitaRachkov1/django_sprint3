@@ -4,16 +4,18 @@ from django.http import Http404
 
 from .models import Post, Category
 
+POSTS_LIMIT = 5
+
 
 def index(request):
     posts = (
         Post.objects
+        .select_related('category')
         .filter(
             is_published=True,
             pub_date__lte=timezone.now(),
             category__is_published=True
-        )
-        .order_by('-pub_date')[:5]
+        )[:POSTS_LIMIT]
     )
     return render(
         request,
@@ -26,14 +28,13 @@ def index(request):
 
 
 def post_detail(request, post_id):
-    post = get_object_or_404(Post, id=post_id)
-
-    if (
-        not post.is_published
-        or post.pub_date > timezone.now()
-        or not post.category.is_published
-    ):
-        raise Http404("Пост недоступен")
+    post = get_object_or_404(
+        Post,
+        id=post_id,
+        is_published=True,
+        pub_date__lte=timezone.now(),
+        category__is_published=True
+        )
 
     return render(
         request,
@@ -57,7 +58,6 @@ def category_posts(request, category_slug):
             is_published=True,
             pub_date__lte=timezone.now()
         )
-        .order_by('-pub_date')
     )
 
     return render(
