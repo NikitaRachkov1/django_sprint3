@@ -26,7 +26,7 @@ def post_detail(request, post_id):
         is_published=True,
         pub_date__lte=timezone.now(),
         category__is_published=True
-        )
+    )
 
     return render(
         request,
