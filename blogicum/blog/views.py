@@ -8,15 +8,7 @@ POSTS_LIMIT = 5
 
 
 def index(request):
-    posts = (
-        Post.objects
-        .select_related('category')
-        .filter(
-            is_published=True,
-            pub_date__lte=timezone.now(),
-            category__is_published=True
-        )[:POSTS_LIMIT]
-    )
+    posts = Post.objects.published()[:POSTS_LIMIT]
     return render(
         request,
         'blog/index.html',
@@ -34,7 +26,7 @@ def post_detail(request, post_id):
         is_published=True,
         pub_date__lte=timezone.now(),
         category__is_published=True
-    )
+        )
 
     return render(
         request,
@@ -51,14 +43,7 @@ def category_posts(request, category_slug):
     if not category.is_published:
         raise Http404("В данной категории нет постов")
 
-    posts_in_category = (
-        Post.objects
-        .filter(
-            category=category,
-            is_published=True,
-            pub_date__lte=timezone.now()
-        )
-    )
+    posts_in_category = Post.objects.published().filter(category=category)
 
     return render(
         request,

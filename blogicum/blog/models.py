@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 User = get_user_model()
@@ -19,6 +20,19 @@ class PublishedModel(models.Model):
         abstract = True
 
 
+class PostManager(models.Manager):
+    def published(self):
+        return (
+            self.get_queryset()
+            .select_related('category')
+            .filter(
+                is_published=True,
+                pub_date__lte=timezone.now(),
+                category__is_published=True
+            )
+        )
+
+
 class Category(PublishedModel):
     title = models.CharField(_('Заголовок'), max_length=MAX_LENGTH)
     description = models.TextField(_('Описание'))
@@ -34,9 +48,7 @@ class Category(PublishedModel):
     class Meta:
         verbose_name = _('категория')
         verbose_name_plural = _('Категории')
-
-    def __str__(self):
-        return self.title
+        ordering = ('title',)
 
 
 class Location(PublishedModel):
@@ -45,12 +57,12 @@ class Location(PublishedModel):
     class Meta:
         verbose_name = _('местоположение')
         verbose_name_plural = _('Местоположения')
-
-    def __str__(self):
-        return self.name
+        ordering = ('name',)
 
 
 class Post(PublishedModel):
+    objects = PostManager()
+
     title = models.CharField(_('Заголовок'), max_length=MAX_LENGTH)
     text = models.TextField(
         _('Текст'),
@@ -86,7 +98,4 @@ class Post(PublishedModel):
         verbose_name = _('публикация')
         verbose_name_plural = _('Публикации')
         default_related_name = 'posts'
-        ordering = ['-pub_date']
-
-    def __str__(self):
-        return self.title
+        ordering = ('-pub_date',)
